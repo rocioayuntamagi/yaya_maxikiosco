@@ -1,0 +1,62 @@
+import { Sale } from "../models/Sale.js";
+import { Product } from "../models/Product.js";
+
+// Registrar venta
+export const createSale = async (req, res) => {
+  try {
+    const { products, paymentMethod } = req.body;
+
+    let total = 0;
+
+    // Descontar stock y calcular total
+    for (const item of products) {
+      const prod = await Product.findById(item.product);
+
+      if (!prod) {
+        return res.status(404).json({ message: "Producto no encontrado" });
+      }
+
+      // Verificar stock
+      if (prod.stock < item.quantity) {
+        return res.status(400).json({
+          message: `Stock insuficiente para ${prod.name}`
+        });
+      }
+
+      // Descontar stock
+      prod.stock -= item.quantity;
+      await prod.save();
+
+      // Calcular subtotal
+      total += item.quantity * item.price;
+    }
+
+    // Crear venta
+    const sale = await Sale.create({
+      products,
+      total,
+      paymentMethod
+    });
+
+    res.status(201).json({
+      message: "Venta registrada",
+      sale
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Error al registrar venta", error });
+  }
+};
+
+// Obtener todas las ventas
+export const getSales = async (req, res) => {
+  try {
+    const sales = await Sale.find()
+      .populate("products.product");
+
+    res.json(sales);
+
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener ventas", error });
+  }
+};
