@@ -7,6 +7,7 @@ import userRoutes from "./routes/userRoutes.js";
 import providerRoutes from "./routes/providerRoutes.js";
 import purchaseRoutes from "./routes/purchaseRoutes.js";
 import saleRoutes from "./routes/saleRoutes.js";
+import cashRoutes from "./routes/cashRoutes.js";
 
 dotenv.config(); // 👈 IMPORTANTE
 
@@ -18,6 +19,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/providers", providerRoutes);
 app.use("/api/purchases", purchaseRoutes);
 app.use("/api/sales", saleRoutes);
+app.use("/api/cash", cashRoutes);
 
 connectDB();
 
