@@ -8,6 +8,8 @@ import providerRoutes from "./routes/providerRoutes.js";
 import purchaseRoutes from "./routes/purchaseRoutes.js";
 import saleRoutes from "./routes/saleRoutes.js";
 import cashRoutes from "./routes/cashRoutes.js";
+import customerRoutes from "./routes/customerRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 dotenv.config(); // 👈 IMPORTANTE
 
@@ -20,6 +22,8 @@ app.use("/api/providers", providerRoutes);
 app.use("/api/purchases", purchaseRoutes);
 app.use("/api/sales", saleRoutes);
 app.use("/api/cash", cashRoutes);
+app.use("/api/customers", customerRoutes);
+app.use("/api/payments", paymentRoutes);
 
 connectDB();
 

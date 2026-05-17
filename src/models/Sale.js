@@ -31,7 +31,13 @@ const saleSchema = new mongoose.Schema(
     date: {
       type: Date,
       default: Date.now,
-    }
+    },
+    customer: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Customer",
+  default: null
+},
+
   },
   {
     timestamps: true,

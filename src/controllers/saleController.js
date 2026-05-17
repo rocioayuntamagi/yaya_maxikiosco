@@ -21,6 +21,18 @@ export const createSale = async (req, res) => {
         return res.status(400).json({
           message: `Stock insuficiente para ${prod.name}`
         });
+
+        if (paymentMethod === "fiado") {
+  const customer = await Customer.findById(req.body.customer);
+
+  if (!customer) {
+    return res.status(404).json({ message: "Cliente no encontrado" });
+  }
+
+  customer.balance += total;
+  await customer.save();
+}
+
       }
 
       // Descontar stock
@@ -35,7 +47,8 @@ export const createSale = async (req, res) => {
     const sale = await Sale.create({
       products,
       total,
-      paymentMethod
+      paymentMethod,
+      customer: paymentMethod === "fiado" ? req.body.customer : null
     });
 
     res.status(201).json({
