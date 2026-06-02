@@ -7,40 +7,61 @@ const productSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     price: {
       type: Number,
       required: true,
     },
+
     stock: {
       type: Number,
       default: 0,
     },
+
+    // ⭐ Código de barras (nuevo)
+    barcode: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: "",
+    },
+
     category: {
       type: String,
       required: true,
     },
+
     description: {
       type: String,
       default: "",
     },
+
     images: {
       type: [String],
       default: [],
     },
 
-    // 🔽 Campos opcionales
+    // ⭐ Campos opcionales
     brand: {
       type: String,
       default: "",
     },
+
     weight: {
-      type: String, // lo dejamos string para permitir "500g", "1kg", etc.
+      type: String, // "500g", "1kg", etc.
       default: "",
     },
+
     dimensions: {
-      type: String, // ej: "20x10x5 cm"
+      type: String, // "20x10x5 cm"
       default: "",
     },
+
+    // ⭐ Para ordenar por productos más vendidos
+    salesCount: {
+      type: Number,
+      default: 0,
+    }
   },
   {
     timestamps: true,

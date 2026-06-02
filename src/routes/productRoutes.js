@@ -4,7 +4,10 @@ import {
   getProducts,
   getProductById,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  getProductByBarcode,
+  searchProducts,
+  advancedSearchProducts
 } from "../controllers/productController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -13,6 +16,9 @@ const router = express.Router();
 
 // Rutas públicas
 router.get("/", getProducts);
+router.get("/search", searchProducts);
+router.get("/search/advanced", advancedSearchProducts);
+router.get("/barcode/:code", getProductByBarcode); 
 router.get("/:id", getProductById);
 
 // Rutas protegidas (solo usuarios logueados)

@@ -68,3 +68,66 @@ export const deleteProduct = async (req, res) => {
     res.status(500).json({ message: "Error al eliminar producto", error });
   }
 };
+
+export const getProductByBarcode = async (req, res) => {
+  try {
+    const product = await Product.findOne({ barcode: req.params.code });
+
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    res.json(product);
+
+  } catch (error) {
+    res.status(500).json({ message: "Error al buscar producto", error });
+  }
+};
+
+export const searchProducts = async (req, res) => {
+  try {
+    const q = req.query.q || req.query.query || "";
+
+    if (!q) {
+      return res.json([]);
+    }
+
+    const products = await Product.find({
+      name: { $regex: q, $options: "i" }
+    }).limit(20);
+
+    res.json(products);
+
+  } catch (error) {
+    res.status(500).json({ message: "Error al buscar productos", error });
+  }
+};
+
+
+export const advancedSearchProducts = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || query.trim() === "") {
+      return res.json([]);
+    }
+
+    const regex = new RegExp(query, "i");
+
+    const products = await Product.find({
+      $or: [
+        { name: regex },          // coincidencia por nombre
+        { barcode: regex },       // coincidencia por código
+        { category: regex },      // coincidencia por categoría
+        { providerName: regex }   // coincidencia por proveedor (si lo guardás)
+      ]
+    })
+      .sort({ salesCount: -1 })   // orden por más vendidos (si lo agregamos)
+      .limit(20);
+
+    res.json(products);
+
+  } catch (error) {
+    res.status(500).json({ message: "Error en búsqueda avanzada", error });
+  }
+};
