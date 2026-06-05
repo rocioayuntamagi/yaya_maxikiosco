@@ -73,3 +73,23 @@ export const getSales = async (req, res) => {
     res.status(500).json({ message: "Error al obtener ventas", error });
   }
 };
+
+// Obtener ventas del día
+export const getSalesToday = async (req, res) => {
+  try {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const sales = await Sale.find({
+      createdAt: { $gte: start, $lte: end }
+    }).populate("products.product");
+
+    res.json(sales);
+  } catch (error) {
+    console.error("Error al obtener ventas del día:", error);
+    res.status(500).json({ message: "Error al obtener ventas del día" });
+  }
+};
