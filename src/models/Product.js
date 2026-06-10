@@ -20,11 +20,12 @@ const productSchema = new mongoose.Schema(
 
     // ⭐ Código de barras (nuevo)
     barcode: {
-      type: String,
-      unique: true,
-      sparse: true,
-      default: "",
-    },
+  type: String,
+  unique: true,
+  sparse: true,
+  default: null,
+},
+
 
     category: {
       type: String,

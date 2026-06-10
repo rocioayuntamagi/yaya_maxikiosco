@@ -2,12 +2,16 @@ import { Product } from "../models/Product.js";
 
 // Crear producto
 export const createProduct = async (req, res) => {
+  console.log("🛠 createProduct llamado");
+  console.log("Body recibido:", req.body);
   try {
     const product = await Product.create(req.body);
     res.status(201).json(product);
   } catch (error) {
-    res.status(500).json({ message: "Error al crear producto", error });
-  }
+  console.error("❌ Error en createProduct:", error);
+  res.status(500).json({ message: "Error al crear producto", error });
+}
+
 };
 
 // Obtener todos los productos
