@@ -10,6 +10,7 @@ import saleRoutes from "./routes/saleRoutes.js";
 import cashRoutes from "./routes/cashRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import deudasRoutes from "./routes/deudasRoutes.js";
 
 dotenv.config(); // 👈 IMPORTANTE
 
@@ -24,6 +25,7 @@ app.use("/api/sales", saleRoutes);
 app.use("/api/cash", cashRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/deudas", deudasRoutes);
 
 connectDB();
 
