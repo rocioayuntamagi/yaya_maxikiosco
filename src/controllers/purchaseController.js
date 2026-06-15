@@ -1,35 +1,28 @@
 import { Purchase } from "../models/Purchase.js";
 import { Product } from "../models/Product.js";
 
-// Registrar compra
 export const createPurchase = async (req, res) => {
   try {
-    const { provider, product, quantity, costPrice, salePrice, billingType } = req.body;
+    const { provider, items, total, date } = req.body;
 
-    // Crear compra
+    // Crear compra multiproducto
     const purchase = await Purchase.create({
       provider,
-      product,
-      quantity,
-      costPrice,
-      salePrice,
-      billingType
+      items,
+      total,
+      date,
     });
 
-    // Actualizar stock del producto
-    const prod = await Product.findById(product);
-    prod.stock += quantity;
-
-    // Si viene precio de venta sugerido, lo actualizamos
-    if (salePrice) {
-      prod.price = salePrice;
+    // Actualizar stock de cada producto
+    for (const item of items) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stock: item.quantity },
+      });
     }
 
-    await prod.save();
-
     res.status(201).json({
-      message: "Compra registrada y stock actualizado",
-      purchase
+      message: "Compra registrada correctamente",
+      purchase,
     });
 
   } catch (error) {
@@ -48,5 +41,30 @@ export const getPurchases = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ message: "Error al obtener compras", error });
+  }
+};
+
+export const getPurchasesByProvider = async (req, res) => {
+  try {
+    const purchases = await Purchase.find({ provider: req.params.id })
+      .populate("items.product", "name")
+      .sort({ date: -1 });
+
+    res.json(purchases);
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener compras", error });
+  }
+};
+
+
+export const getPurchaseById = async (req, res) => {
+  try {
+    const purchase = await Purchase.findById(req.params.id)
+      .populate("provider", "name")
+      .populate("items.product", "name");
+
+    res.json(purchase);
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener compra", error });
   }
 };

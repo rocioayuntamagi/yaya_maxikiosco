@@ -7,33 +7,36 @@ const purchaseSchema = new mongoose.Schema(
       ref: "Provider",
       required: true,
     },
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
-      required: true,
-    },
-    quantity: {
+
+    // NUEVO: lista de productos comprados
+    items: [
+      {
+        product: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        price: {
+          type: Number, // precio de compra
+          required: true,
+        },
+      },
+    ],
+
+    // NUEVO: total de la compra
+    total: {
       type: Number,
       required: true,
     },
-    costPrice: {
-      type: Number,
-      required: true,
-    },
-    salePrice: {
-      type: Number,
-      required: false,
-      default: null,
-    },
-    billingType: {
-      type: String,
-      enum: ["blanco", "negro"],
-      default: "negro",
-    },
+
     date: {
       type: Date,
       default: Date.now,
-    }
+    },
   },
   {
     timestamps: true,

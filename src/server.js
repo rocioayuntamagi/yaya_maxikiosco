@@ -27,6 +27,7 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/deudas", deudasRoutes);
 
+
 connectDB();
 
 app.listen(process.env.PORT, () =>
