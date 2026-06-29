@@ -5,6 +5,8 @@ import {
   getPurchasesByProvider,
   getPurchaseById 
 } from "../controllers/purchaseController.js";
+import { deletePurchase } from "../controllers/purchaseController.js";
+
 
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -15,5 +17,8 @@ router.post("/", protect, createPurchase);
 router.get("/", protect, getPurchases);
 router.get("/provider/:id", protect, getPurchasesByProvider);
 router.get("/:id", protect, getPurchaseById); 
+
+router.delete("/:id", protect, deletePurchase);
+
 
 export default router;

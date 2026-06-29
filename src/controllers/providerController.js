@@ -57,13 +57,22 @@ export const updateProvider = async (req, res) => {
 // Eliminar proveedor
 export const deleteProvider = async (req, res) => {
   try {
-    const provider = await Provider.findByIdAndDelete(req.params.id);
+    const providerId = req.params.id;
 
-    if (!provider) {
-      return res.status(404).json({ message: "Proveedor no encontrado" });
+    // Verificar si tiene compras asociadas
+    const purchases = await Purchase.find({ provider: providerId });
+
+    if (purchases.length > 0) {
+      return res.status(400).json({
+        message: "No se puede eliminar el proveedor porque tiene compras registradas."
+      });
     }
 
-    res.json({ message: "Proveedor eliminado" });
+    // Eliminar proveedor
+    await Provider.findByIdAndDelete(providerId);
+
+    res.json({ message: "Proveedor eliminado correctamente" });
+
   } catch (error) {
     res.status(500).json({ message: "Error al eliminar proveedor", error });
   }

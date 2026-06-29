@@ -68,3 +68,28 @@ export const getPurchaseById = async (req, res) => {
     res.status(500).json({ message: "Error al obtener compra", error });
   }
 };
+
+export const deletePurchase = async (req, res) => {
+  try {
+    const purchase = await Purchase.findById(req.params.id);
+
+    if (!purchase) {
+      return res.status(404).json({ message: "Compra no encontrada" });
+    }
+
+    // Revertir stock
+    for (const item of purchase.items) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stock: -item.quantity },
+      });
+    }
+
+    // Eliminar compra
+    await purchase.deleteOne();
+
+    res.json({ message: "Compra eliminada correctamente" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Error al eliminar compra", error });
+  }
+};
