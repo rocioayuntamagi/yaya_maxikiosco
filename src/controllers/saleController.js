@@ -1,10 +1,12 @@
 import { Sale } from "../models/Sale.js";
 import { Product } from "../models/Product.js";
+import { Customer } from "../models/Customer.js";
+import Debt from "../models/Debt.js";
 
 // Registrar venta
 export const createSale = async (req, res) => {
   try {
-    const { products, paymentMethod } = req.body;
+    const { products, paymentMethod, customer: customerId } = req.body;
 
     let total = 0;
 
@@ -21,18 +23,6 @@ export const createSale = async (req, res) => {
         return res.status(400).json({
           message: `Stock insuficiente para ${prod.name}`
         });
-
-        if (paymentMethod === "fiado") {
-  const customer = await Customer.findById(req.body.customer);
-
-  if (!customer) {
-    return res.status(404).json({ message: "Cliente no encontrado" });
-  }
-
-  customer.balance += total;
-  await customer.save();
-}
-
       }
 
       // Descontar stock
@@ -48,27 +38,56 @@ export const createSale = async (req, res) => {
       products,
       total,
       paymentMethod,
-      customer: paymentMethod === "fiado" ? req.body.customer : null
+      customer: paymentMethod === "fiado" ? customerId : null
     });
 
-    res.status(201).json({
+    // ⭐ LÓGICA FIADO — limpia y sin duplicados
+    if (paymentMethod === "fiado") {
+      let customer = await Customer.findById(customerId);
+
+      // Si el cliente recién fue creado desde el popup, Mongo puede tardar unos ms
+      if (!customer) {
+        await new Promise(resolve => setTimeout(resolve, 150));
+        customer = await Customer.findById(customerId);
+      }
+
+      if (!customer) {
+        return res.status(404).json({ message: "Cliente no encontrado" });
+      }
+
+      // Crear deuda
+      await Debt.create({
+        customer: customerId,
+        items: products,   // ⭐ agregado: el schema de Debt tiene "items", antes no se enviaba
+        total,              // ⭐ CORREGIDO: antes era "amount", el schema pide "total"
+        description: "Compra fiada",
+        sale: sale._id
+      });
+
+      // Actualizar balance
+      customer.balance -= total;
+      await customer.save();
+    }
+
+    // Respuesta final
+    return res.status(201).json({
       message: "Venta registrada",
       sale
     });
 
   } catch (error) {
-    res.status(500).json({ message: "Error al registrar venta", error });
+    return res.status(500).json({
+      message: "Error al registrar venta",
+      error
+    });
   }
 };
 
 // Obtener todas las ventas
 export const getSales = async (req, res) => {
   try {
-    const sales = await Sale.find()
-      .populate("products.product");
-
+    const sales = await Sale.find().populate("products.product");
     res.json(sales);
-
   } catch (error) {
     res.status(500).json({ message: "Error al obtener ventas", error });
   }

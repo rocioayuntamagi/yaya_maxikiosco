@@ -39,8 +39,8 @@ export const closeCashRegister = async (req, res) => {
       date: { $gte: cash.openedAt }
     });
 
-    // Calcular totales por medio de pago
-    const totals = {
+    // Calcular totales por medio de pago (solo lo que vino de ventas)
+    const salesTotals = {
       efectivo: 0,
       debito: 0,
       credito: 0,
@@ -48,14 +48,22 @@ export const closeCashRegister = async (req, res) => {
       fiado: 0
     };
 
-    let expectedTotal = 0;
-
     for (const sale of sales) {
-      totals[sale.paymentMethod] += sale.total;
-      expectedTotal += sale.total;
+      salesTotals[sale.paymentMethod] += sale.total;
     }
 
     const { closingAmount } = req.body;
+
+    // ⭐ CORREGIDO: sumar a lo que ya había en cash.totals (pagos de deuda
+    // registrados durante el turno vía markSaleAsPaid/partialPayment) en
+    // vez de sobreescribirlo. Antes "cash.totals = totals" pisaba esos pagos.
+    const totals = {
+      efectivo: cash.totals.efectivo + salesTotals.efectivo,
+      debito: cash.totals.debito + salesTotals.debito,
+      credito: cash.totals.credito + salesTotals.credito,
+      transferencia: cash.totals.transferencia + salesTotals.transferencia,
+      fiado: cash.totals.fiado + salesTotals.fiado
+    };
 
     const difference = closingAmount - (cash.openingAmount + totals.efectivo);
 

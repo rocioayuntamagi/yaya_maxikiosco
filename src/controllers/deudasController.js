@@ -2,6 +2,8 @@ import { Sale } from "../models/Sale.js";
 import { Customer } from "../models/Customer.js";
 import { CashRegister } from "../models/CashRegister.js";
 
+const VALID_PAYMENT_METHODS = ["efectivo", "debito", "credito", "transferencia"];
+
 // ⭐ Obtener todas las ventas fiadas de un cliente
 export const getDebtByCustomer = async (req, res) => {
   try {
@@ -36,22 +38,32 @@ export const getDebtByCustomer = async (req, res) => {
 export const markSaleAsPaid = async (req, res) => {
   try {
     const { saleId } = req.params;
+    const { paymentMethod } = req.body;
+
+    if (!VALID_PAYMENT_METHODS.includes(paymentMethod)) {
+      return res.status(400).json({ message: "Método de pago inválido." });
+    }
+
+    const openRegister = await CashRegister.findOne({ isOpen: true });
+    if (!openRegister) {
+      return res.status(400).json({
+        message: "No hay una caja abierta. Abrí la caja antes de registrar pagos."
+      });
+    }
 
     const sale = await Sale.findById(saleId);
     if (!sale) return res.status(404).json({ message: "Venta no encontrada" });
 
     const customer = await Customer.findById(sale.customer);
+    if (!customer) return res.status(404).json({ message: "Cliente no encontrado" });
+
     customer.balance += sale.total;
     await customer.save();
 
-    // Registrar en caja del día
-    await CashRegister.create({
-      type: "pago-deuda",
-      amount: sale.total,
-      customer: sale.customer
-    });
+    openRegister.totals[paymentMethod] += sale.total;
+    await openRegister.save();
 
-    // Eliminar la venta fiada
+    // Registrar en caja del día
     await Sale.findByIdAndDelete(saleId);
 
     res.json({ message: "Venta fiada pagada" });
@@ -64,17 +76,32 @@ export const markSaleAsPaid = async (req, res) => {
 export const partialPayment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { amount } = req.body;
+    const { amount, paymentMethod } = req.body;
+
+    if (!VALID_PAYMENT_METHODS.includes(paymentMethod)) {
+      return res.status(400).json({ message: "Método de pago inválido." });
+    }
+
+    const numericAmount = Number(amount);
+    if (!numericAmount || numericAmount <= 0) {
+      return res.status(400).json({ message: "Monto de pago inválido." });
+    }
+
+    const openRegister = await CashRegister.findOne({ isOpen: true });
+    if (!openRegister) {
+      return res.status(400).json({
+        message: "No hay una caja abierta. Abrí la caja antes de registrar pagos."
+      });
+    }
 
     const customer = await Customer.findById(id);
-    customer.balance += amount;
+    if (!customer) return res.status(404).json({ message: "Cliente no encontrado" });
+
+    customer.balance += numericAmount;
     await customer.save();
 
-    await CashRegister.create({
-      type: "pago-parcial-deuda",
-      amount,
-      customer: id
-    });
+    openRegister.totals[paymentMethod] += numericAmount;
+    await openRegister.save();
 
     res.json({ message: "Pago parcial registrado" });
   } catch (error) {
