@@ -1,6 +1,16 @@
 import { CashRegister } from "../models/CashRegister.js";
 import { Sale } from "../models/Sale.js";
 
+// ⭐ Nuevo: consultar si hay una caja abierta (lo usa el popup de Caja.tsx)
+export const getCashStatus = async (req, res) => {
+  try {
+    const cash = await CashRegister.findOne({ isOpen: true });
+    res.json({ isOpen: !!cash, cash: cash || null });
+  } catch (error) {
+    res.status(500).json({ message: "Error al consultar estado de caja", error });
+  }
+};
+
 export const openCashRegister = async (req, res) => {
   try {
     const { openingAmount } = req.body;
