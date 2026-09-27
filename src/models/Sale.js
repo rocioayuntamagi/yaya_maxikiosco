@@ -12,12 +12,27 @@ const saleSchema = new mongoose.Schema(
 
     total: { type: Number, required: true },
 
+    // Turno al que pertenece la venta
+    cashRegister: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CashRegister",
+      default: null,
+      index: true,
+    },
+
+    // Fiado: se marca cobrada, NUNCA se borra la venta
+    creditSettled: { type: Boolean, default: false },
+    settledAt: { type: Date, default: null },
+
+    // Anulación lógica
+    cancelled: { type: Boolean, default: false },
     paymentMethod: {
       type: String,
       enum: ["efectivo", "debito", "credito", "transferencia", "mercadopago", "fiado"],
       required: true
     },
 
+  
     // EFECTIVO
     receivedAmount: { type: Number },
     change: { type: Number },
@@ -46,5 +61,7 @@ const saleSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+saleSchema.index({ customer: 1, paymentMethod: 1, creditSettled: 1 });
 
 export const Sale = mongoose.model("Sale", saleSchema);

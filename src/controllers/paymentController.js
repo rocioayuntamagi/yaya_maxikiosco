@@ -1,29 +1,28 @@
-import { Payment } from "../models/Payment.js";
-import { Customer } from "../models/Customer.js";
+import { registerDebtPayment } from "../services/payment.service.js";
+import { getUserId } from "../utils/cashRegisterContext.js";
 
 export const registerPayment = async (req, res) => {
   try {
-    const { customer, amount } = req.body;
+    const { customer, amount, paymentMethod = "efectivo", saleId } = req.body;
 
-    const cust = await Customer.findById(customer);
-    if (!cust) {
-      return res.status(404).json({ message: "Cliente no encontrado" });
-    }
-
-    // Registrar pago
-    const payment = await Payment.create({ customer, amount });
-
-    // Actualizar saldo
-    cust.balance -= amount;
-    await cust.save();
+    const result = await registerDebtPayment({
+      customerId: customer,
+      amount,
+      paymentMethod,
+      saleId: saleId || null,
+      settleSale: Boolean(saleId),
+      userId: getUserId(req),
+    });
 
     res.status(201).json({
       message: "Pago registrado",
-      payment,
-      newBalance: cust.balance
+      payment: result.payment,
+      newBalance: result.newBalance,
+      remainingDebt: result.remainingDebt,
     });
-
   } catch (error) {
-    res.status(500).json({ message: "Error al registrar pago", error });
+    res
+      .status(error.status || 500)
+      .json({ message: error.message || "Error al registrar pago" });
   }
 };
