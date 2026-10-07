@@ -101,20 +101,17 @@ cashRegisterSchema.post("init", function () {
   this.$locals.wasClosed = this.isOpen === false;
 });
 
-cashRegisterSchema.pre("save", function (next) {
+cashRegisterSchema.pre("save", function () {
   if (!this.isNew && this.$locals.wasClosed) {
-    return next(new Error("La caja ya está cerrada y no puede modificarse"));
+    throw new Error("La caja ya está cerrada y no puede modificarse");
   }
-  next();
 });
 
 // Cualquier update directo queda condicionado a que la caja esté abierta
 ["findOneAndUpdate", "updateOne", "updateMany"].forEach((op) => {
-  cashRegisterSchema.pre(op, function (next) {
+  cashRegisterSchema.pre(op, function () {
     const filter = this.getFilter();
-    if (filter.isOpen === true) return next();
-    this.setQuery({ ...filter, isOpen: true });
-    next();
+    if (filter.isOpen !== true) this.setQuery({ ...filter, isOpen: true });
   });
 });
 
