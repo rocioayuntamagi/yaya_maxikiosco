@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { CashRegister } from "../models/CashRegister.js";
 import { Sale } from "../models/Sale.js";
 import { Payment } from "../models/Payment.js";
@@ -173,5 +174,43 @@ export const closeCashRegisterWithTotals = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ message: "Error al cerrar caja" });
+  }
+};
+
+export const getCashHistory = async (req, res) => {
+  try {
+    const history = await CashRegister.find({ isOpen: false })
+      .select("_id openedAt closedAt totalsAtClose finalBalance")
+      .sort({ closedAt: -1 });
+    return res.json(history);
+  } catch (error) {
+    return res.status(500).json({ message: "Error al obtener historial de cajas" });
+  }
+};
+
+export const getCashHistoryById = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "ID de caja inválido" });
+    }
+    const cash = await CashRegister.findOne({ _id: req.params.id, isOpen: false });
+    if (!cash) return res.status(404).json({ message: "Cierre de caja no encontrado" });
+
+    const filter = { cashRegister: cash._id, cancelled: { $ne: true } };
+    const [ventas, pagos, gastos] = await Promise.all([
+      Sale.find(filter),
+      Payment.find(filter),
+      Expense.find(filter),
+    ]);
+    return res.json({
+      cashRegister: cash,
+      ventas,
+      pagos,
+      gastos,
+      totalsAtClose: cash.totalsAtClose,
+      finalBalance: cash.finalBalance,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error al obtener detalle de caja" });
   }
 };
