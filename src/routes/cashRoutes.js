@@ -3,7 +3,8 @@ import {
   openCashRegister,
   closeCashRegister,
   getCashStatus,
-  previewCashRegister
+  previewCashRegister,
+  closeCashRegisterWithTotals
 } from "../controllers/cashController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -14,5 +15,6 @@ router.get("/status", protect, getCashStatus); // ⭐ nuevo
 router.get("/preview", protect, previewCashRegister);
 router.post("/open", protect, openCashRegister);
 router.post("/close", protect, closeCashRegister);
+router.put("/close", protect, closeCashRegisterWithTotals);
 
 export default router;

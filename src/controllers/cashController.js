@@ -132,3 +132,46 @@ export const previewCashRegister = async (req, res) => {
     return res.status(500).json({ message: "Error al previsualizar cierre de caja" });
   }
 };
+
+export const closeCashRegisterWithTotals = async (req, res) => {
+  try {
+    const cash = await CashRegister.findOne({ isOpen: true });
+    if (!cash) return res.status(409).json({ message: "No hay caja abierta" });
+
+    const report = await buildClosingReport(cash, { includeUnlinked: false });
+    const round2 = (amount) => Math.round(amount * 100) / 100;
+    const totalsAtClose = {
+      efectivo: round2(report.sales.efectivo + report.creditRecovered.efectivo),
+      tarjeta: round2(report.sales.tarjeta + report.creditRecovered.tarjeta),
+      transferencia: round2(report.sales.transferencia + report.creditRecovered.transferencia),
+      fiadoGenerado: report.creditGiven,
+      fiadoRecuperado: report.creditRecovered.total,
+      gastos: report.expenses.total,
+      balanceFinal: report.finalBalance,
+    };
+    const closedAt = new Date();
+    const closed = await CashRegister.findOneAndUpdate(
+      { _id: cash._id, isOpen: true },
+      {
+        $set: {
+          isOpen: false,
+          closedAt,
+          closedBy: req.user.id,
+          totalsAtClose: { ...totalsAtClose, fiado: report.creditGiven },
+          finalBalance: report.finalBalance,
+        },
+      },
+      { new: true, runValidators: true }
+    );
+    if (!closed) return res.status(409).json({ message: "La caja ya fue cerrada" });
+
+    return res.json({
+      message: "Caja cerrada correctamente",
+      cashRegisterId: closed._id,
+      totalsAtClose,
+      closedAt: closed.closedAt,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error al cerrar caja" });
+  }
+};
