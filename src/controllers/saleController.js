@@ -2,8 +2,54 @@ import { Sale } from "../models/Sale.js";
 import { Product } from "../models/Product.js";
 import { Customer } from "../models/Customer.js";
 import { requireOpenCashRegister, getUserId } from "../utils/cashRegisterContext.js";
-// ⛔ eliminado: import Debt from "../models/Debt.js";
 
+// ===============================
+// 📌 Obtener todas las ventas
+// ===============================
+export const getSales = async (req, res) => {
+  try {
+    const sales = await Sale.find()
+      .populate("products.product")
+      .populate("customer");
+
+    res.json(sales);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error al obtener ventas",
+      error: error.message,
+    });
+  }
+};
+
+// ===============================
+// 📌 Obtener ventas del día
+// ===============================
+export const getSalesToday = async (req, res) => {
+  try {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const sales = await Sale.find({
+      createdAt: { $gte: start, $lte: end },
+    })
+      .populate("products.product")
+      .populate("customer");
+
+    res.json(sales);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error al obtener ventas del día",
+      error: error.message,
+    });
+  }
+};
+
+// ===============================
+// 📌 Registrar una venta
+// ===============================
 export const createSale = async (req, res) => {
   try {
     const { products, paymentMethod, customer: customerId } = req.body;
@@ -28,7 +74,7 @@ export const createSale = async (req, res) => {
       }
     }
 
-    // Validar stock y calcular total ANTES de tocar la base
+    // Validar stock y calcular total
     let total = 0;
     const validated = [];
 
@@ -58,7 +104,7 @@ export const createSale = async (req, res) => {
       }
     }
 
-    // Recién ahora descontamos stock
+    // Descontar stock
     for (const { prod, quantity } of validated) {
       prod.stock -= quantity;
       await prod.save();
@@ -74,7 +120,7 @@ export const createSale = async (req, res) => {
       user: getUserId(req),
     });
 
-    // Fiado: la venta ES la deuda. No hay colección Debt.
+    // Fiado: la venta es la deuda
     if (paymentMethod === "fiado") {
       await Customer.findByIdAndUpdate(customerId, {
         $inc: { balance: -total },
