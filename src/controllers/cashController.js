@@ -1,5 +1,8 @@
 import { CashRegister } from "../models/CashRegister.js";
 import { Sale } from "../models/Sale.js";
+import { Payment } from "../models/Payment.js";
+import { Expense } from "../models/Expense.js";
+import { buildClosingReport } from "../services/cashClosing.service.js";
 
 // ⭐ Nuevo: consultar si hay una caja abierta (lo usa el popup de Caja.tsx)
 export const getCashStatus = async (req, res) => {
@@ -93,5 +96,39 @@ export const closeCashRegister = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ message: "Error al cerrar caja", error });
+  }
+};
+
+export const previewCashRegister = async (req, res) => {
+  try {
+    const cash = await CashRegister.findOne({ isOpen: true });
+    if (!cash) return res.status(409).json({ message: "No hay caja abierta" });
+
+    const filter = { cashRegister: cash._id, cancelled: { $ne: true } };
+    const [ventas, pagos, gastos, report] = await Promise.all([
+      Sale.find(filter),
+      Payment.find(filter),
+      Expense.find(filter),
+      buildClosingReport(cash, { includeUnlinked: false }),
+    ]);
+    const round2 = (amount) => Math.round(amount * 100) / 100;
+
+    return res.json({
+      cashRegisterId: cash._id,
+      totals: {
+        efectivo: round2(report.sales.efectivo + report.creditRecovered.efectivo),
+        tarjeta: round2(report.sales.tarjeta + report.creditRecovered.tarjeta),
+        transferencia: round2(report.sales.transferencia + report.creditRecovered.transferencia),
+        fiadoGenerado: report.creditGiven,
+        fiadoRecuperado: report.creditRecovered.total,
+        gastos: report.expenses.total,
+        balanceFinal: report.finalBalance,
+      },
+      ventas,
+      pagos,
+      gastos,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error al previsualizar cierre de caja" });
   }
 };

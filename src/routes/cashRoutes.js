@@ -2,7 +2,8 @@ import express from "express";
 import {
   openCashRegister,
   closeCashRegister,
-  getCashStatus
+  getCashStatus,
+  previewCashRegister
 } from "../controllers/cashController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -10,6 +11,7 @@ import { protect } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 router.get("/status", protect, getCashStatus); // ⭐ nuevo
+router.get("/preview", protect, previewCashRegister);
 router.post("/open", protect, openCashRegister);
 router.post("/close", protect, closeCashRegister);
 
