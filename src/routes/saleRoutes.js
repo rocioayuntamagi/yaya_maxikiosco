@@ -13,4 +13,5 @@ router.post("/", protect, createSale);
 router.get("/", protect, getSales);
 router.get("/today", protect, getSalesToday); // ⭐ NUEVO
 
+
 export default router;
