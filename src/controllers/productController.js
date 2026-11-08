@@ -24,6 +24,27 @@ export const getProducts = async (req, res) => {
   }
 };
 
+export const getLowStockProducts = async (req, res) => {
+  const rawThreshold = req.query.threshold;
+  if (rawThreshold !== undefined && (typeof rawThreshold !== "string" || rawThreshold.trim() === "")) {
+    return res.status(400).json({ message: "El umbral debe ser un número no negativo" });
+  }
+  const threshold = rawThreshold === undefined ? 5 : Number(rawThreshold);
+  if (!Number.isFinite(threshold) || threshold < 0) {
+    return res.status(400).json({ message: "El umbral debe ser un número no negativo" });
+  }
+
+  try {
+    const products = await Product.find({ stock: { $lte: threshold } })
+      .select({ _id: 0, name: 1, stock: 1, category: 1 })
+      .sort({ stock: 1, name: 1 })
+      .lean();
+    return res.json(products);
+  } catch (error) {
+    return res.status(500).json({ message: "Error al obtener productos con stock bajo" });
+  }
+};
+
 // Obtener un producto por ID
 export const getProductById = async (req, res) => {
   try {
