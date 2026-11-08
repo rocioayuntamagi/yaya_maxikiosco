@@ -24,6 +24,12 @@ export const getProducts = async (req, res) => {
   }
 };
 
+const findProductsAtOrBelow = (threshold) =>
+  Product.find({ stock: { $lte: threshold } })
+    .select({ _id: 0, name: 1, stock: 1, category: 1 })
+    .sort({ stock: 1, name: 1 })
+    .lean();
+
 export const getLowStockProducts = async (req, res) => {
   const rawThreshold = req.query.threshold;
   if (rawThreshold !== undefined && (typeof rawThreshold !== "string" || rawThreshold.trim() === "")) {
@@ -35,13 +41,19 @@ export const getLowStockProducts = async (req, res) => {
   }
 
   try {
-    const products = await Product.find({ stock: { $lte: threshold } })
-      .select({ _id: 0, name: 1, stock: 1, category: 1 })
-      .sort({ stock: 1, name: 1 })
-      .lean();
+    const products = await findProductsAtOrBelow(threshold);
     return res.json(products);
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener productos con stock bajo" });
+  }
+};
+
+export const getCriticalStockProducts = async (req, res) => {
+  try {
+    const products = await findProductsAtOrBelow(2);
+    return res.json(products);
+  } catch (error) {
+    return res.status(500).json({ message: "Error al obtener productos con stock crítico" });
   }
 };
 

@@ -3,6 +3,7 @@ import {
   createProduct,
   getProducts,
   getLowStockProducts,
+  getCriticalStockProducts,
   getProductById,
   updateProduct,
   deleteProduct,
@@ -16,6 +17,7 @@ import { protect } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 router.get("/low-stock", protect, getLowStockProducts);
+router.get("/critical-stock", protect, getCriticalStockProducts);
 
 // Rutas públicas
 router.get("/", getProducts);
