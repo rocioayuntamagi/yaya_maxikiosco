@@ -16,15 +16,35 @@ export const createStockMovement = async (req, res) => {
     const exists = await Product.exists({ _id: product });
     if (!exists) return res.status(404).json({ message: "Producto no encontrado" });
 
-    const movement = await StockMovement.create({
+    const movementData = {
       product,
       type,
       quantity,
       reason,
       user: getUserId(req),
+    };
+    await new StockMovement(movementData).validate();
+
+    const delta = type === "ingreso" || type === "ajuste_positivo" ? quantity : -quantity;
+    const movement = await mongoose.connection.transaction(async (session) => {
+      const updated = await Product.findOneAndUpdate(
+        { _id: product, stock: { $gte: -delta } },
+        { $inc: { stock: delta } },
+        { new: true, session }
+      );
+      if (!updated) {
+        const stillExists = await Product.exists({ _id: product }).session(session);
+        const error = new Error(stillExists ? "Stock insuficiente para registrar el movimiento" : "Producto no encontrado");
+        error.status = stillExists ? 409 : 404;
+        throw error;
+      }
+
+      const [record] = await StockMovement.create([movementData], { session });
+      return record;
     });
     return res.status(201).json(movement);
   } catch (error) {
+    if (error.status) return res.status(error.status).json({ message: error.message });
     if (error.name === "ValidationError" || error.name === "CastError") {
       return res.status(400).json({ message: error.message });
     }
