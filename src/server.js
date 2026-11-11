@@ -13,6 +13,7 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import deudasRoutes from "./routes/deudasRoutes.js";
 import expenseRoutes from "./routes/expenseRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import stockMovementRoutes from "./routes/stockMovementRoutes.js";
 
 dotenv.config(); // 👈 IMPORTANTE
 
@@ -30,6 +31,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/deudas", deudasRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/stock-movements", stockMovementRoutes);
 
 
 connectDB();
