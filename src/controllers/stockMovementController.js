@@ -3,6 +3,25 @@ import { Product } from "../models/Product.js";
 import { StockMovement } from "../models/StockMovement.js";
 import { getUserId } from "../utils/cashRegisterContext.js";
 
+export const getStockMovements = async (req, res) => {
+  const { product } = req.query;
+  if (product !== undefined && (typeof product !== "string" || !mongoose.isValidObjectId(product))) {
+    return res.status(400).json({ message: "ID de producto inválido" });
+  }
+
+  try {
+    const movements = await StockMovement.find(product ? { product } : {})
+      .select("product type quantity reason user createdAt")
+      .populate("product", "name")
+      .populate("user", "name")
+      .sort({ createdAt: -1, _id: -1 })
+      .lean();
+    return res.json(movements);
+  } catch (error) {
+    return res.status(500).json({ message: "Error al obtener movimientos de stock" });
+  }
+};
+
 export const createStockMovement = async (req, res) => {
   try {
     const { product, type, quantity, reason } = req.body || {};
